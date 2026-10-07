@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.15.4 (2026-10-07)
+
+**Safety fix: Initial import can no longer delete files from /config,
+even via "GitHub wins for all" against an empty or partial repo.**
+
+- The onboarding Initial Import screen's "GitHub wins" resolution, for a
+  file that only exists in `/config` (GitHub doesn't have it yet), used
+  to delete that file from `/config` -- correct in isolation, but with a
+  brand-new or empty GitHub repo, *every* real file in `/config` is
+  "config-only," so a single click on the "GitHub wins for all" bulk
+  button could wipe your entire live configuration in one step. This is
+  the exact data-loss failure mode this add-on exists to prevent in the
+  old Git Pull add-on, reintroduced in a different screen. A file GitHub
+  doesn't have is now never deleted here, no matter what resolution is
+  picked (per-file or bulk) -- it's simply left untouched in `/config`
+  and picked up normally by a later Push. Enforced server-side
+  regardless of what the form submits; the per-file picker also no
+  longer offers "GitHub wins" at all for a file in this situation, and
+  the screen now states the guarantee up front.
+- Renamed the "/config wins" label to **"Local HA config wins"**
+  throughout the UI (Initial import, Settings -> Sync scope, Full Sync,
+  Compare, Status, the Push conflict screen) and in the two places it
+  becomes a real git commit message in your repo's history -- clearer
+  for anyone not already fluent in Home Assistant's `/config` shorthand.
+  Internal values/URLs (`config_wins`, stored history rows) are
+  unchanged; this is a display-only rename.
+
+2 new regression tests covering both the bulk-button and a tampered
+per-file form submission. Full suite (252 tests) passes.
+
 ## 1.15.3 (2026-10-07)
 
 **Updated GitHub references after the repo owner's account rename
