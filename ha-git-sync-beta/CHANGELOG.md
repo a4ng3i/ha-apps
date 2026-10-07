@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.16.0 (2026-10-07)
+
+**The "conflicts need resolution" notice now clears itself automatically
+once every conflict it covers is resolved.**
+
+- Previously, resolving every open conflict from the Conflicts tab left
+  the matching notice sitting on the Notifications tab until you visited
+  it and clicked "Clear notices" by hand -- easy to forget, and stale
+  once there's nothing left to act on. It's now cleared automatically
+  the moment the last open conflict it could refer to is resolved. A
+  notice covering several files together isn't cleared until all of them
+  are resolved, not just the first one. Only this specific notice is
+  affected -- every other kind (restart needed, etc) is untouched.
+  Default (status_page) notification mode only; "Home Assistant
+  notification" and "Other" modes don't keep a list here to clear.
+
+6 new tests. Full suite (258 tests) passes.
+
 ## 1.15.4 (2026-10-07)
 
 **Safety fix: Initial import can no longer delete files from /config,

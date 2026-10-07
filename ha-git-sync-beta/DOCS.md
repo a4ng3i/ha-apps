@@ -296,6 +296,13 @@ places, chosen in **Settings -> Notifications**:
   onboarding yet), type the service name manually instead (the part
   after `notify.`, e.g. `mobile_app_phone`).
 
+In the default mode, the "conflicts need resolution" notice clears itself
+automatically once every conflict it could refer to is resolved -- no
+need to visit the Notifications tab and clear it by hand. If it covered
+several files in one notice, resolving just one of them isn't enough to
+clear it; it stays until the last one is resolved too. Every other notice
+is unaffected by resolving a conflict.
+
 ## Backups
 
 Every applied pull, conflict resolution, or Full Sync backs up each file

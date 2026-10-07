@@ -1,5 +1,5 @@
 name: "HA Git Sync (Beta)"
-version: "1.15.4"
+version: "1.16.0"
 slug: "ha-git-sync-beta"
 description: "BETA/testing channel, built from the uat branch. Do not run alongside the production add-on with automatic sync pointed at the same /config -- use a separate test repo, or keep Sync policy on manual."
 url: "https://github.com/a4ng3i/ha-apps/tree/main/ha-git-sync-beta"
