@@ -81,18 +81,18 @@ per-file form submission. Full suite (252 tests) passes.
 
 ## 1.15.3 (2026-10-07)
 
-**Updated GitHub references after the repo owner's account rename
-(a4ng3i -> a4ng3i).**
+**Updated GitHub references after the repo owner's account rename.**
 
 - `config.yaml`'s `image:` field now points at
   `ghcr.io/a4ng3i/{arch}-ha-git-sync`. The build workflow already
   publishes new images under the account's current name automatically,
-  so leaving this field on the old name would have meant Supervisor kept
-  pulling a namespace that stopped receiving new version tags -- existing
-  installs would look for every future update and never find one.
+  so leaving this field on the previous name would have meant Supervisor
+  kept pulling a namespace that stopped receiving new version tags --
+  existing installs would look for every future update and never find
+  one.
 - Repository/source links in `repository.yaml`, `README.md`, and the
   add-on's OCI image label now point at `github.com/a4ng3i/...` instead
-  of the old `a4ng3i` username.
+  of the account's previous username.
 
 ## 1.15.2 (2026-10-05)
 

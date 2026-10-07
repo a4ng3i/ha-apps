@@ -1,19 +1,98 @@
 # Changelog
 
+## 1.16.1 (2026-10-07)
+
+**Security/correctness fix: checking a single file in Settings -> Sync
+scope's picker (Selective mode) could silently also include a
+different, unrelated file elsewhere in `/config` that happens to share
+the same name.**
+
+- Checking a root-level file like `configuration.yaml` saved the include
+  pattern as the bare name `configuration.yaml` with no leading `/`. In
+  gitignore/gitwildmatch syntax (what Sync scope's patterns use), a
+  pattern with no `/` matches that basename **at any depth**, not just
+  where you picked it -- so that one checkbox also silently brought
+  `zigbee2mqtt/configuration.yaml` into scope (Zigbee2MQTT's own bridge
+  config file, which commonly holds the MQTT broker's username and
+  password), with no indication anywhere that anything beyond the
+  checked box was included. This is how an unrelated folder like
+  `zigbee2mqtt/` could show up in Settings -> Sync policy's picker, with
+  an inheritable/settable policy, despite never being checked in Sync
+  scope at all -- the giveaway that led to finding this.
+- Every pattern the picker saves is now anchored to `/config`'s root (a
+  leading `/`), so it only ever matches the exact file/folder you
+  checked. A hand-typed wildcard in the free-form "Additional include
+  patterns" box (anything with `*`, `?`, `[`, or `!`) is unaffected --
+  cross-tree matching is exactly what that box is for. Applies
+  automatically to patterns saved before this update too, the next time
+  they're read -- no manual re-saving needed.
+
+6 new tests, including an end-to-end reproduction of the exact scenario
+above. Full suite (264 tests) passes.
+
+## 1.16.0 (2026-10-07)
+
+**The "conflicts need resolution" notice now clears itself automatically
+once every conflict it covers is resolved.**
+
+- Previously, resolving every open conflict from the Conflicts tab left
+  the matching notice sitting on the Notifications tab until you visited
+  it and clicked "Clear notices" by hand -- easy to forget, and stale
+  once there's nothing left to act on. It's now cleared automatically
+  the moment the last open conflict it could refer to is resolved. A
+  notice covering several files together isn't cleared until all of them
+  are resolved, not just the first one. Only this specific notice is
+  affected -- every other kind (restart needed, etc) is untouched.
+  Default (status_page) notification mode only; "Home Assistant
+  notification" and "Other" modes don't keep a list here to clear.
+
+6 new tests. Full suite (258 tests) passes.
+
+## 1.15.4 (2026-10-07)
+
+**Safety fix: Initial import can no longer delete files from /config,
+even via "GitHub wins for all" against an empty or partial repo.**
+
+- The onboarding Initial Import screen's "GitHub wins" resolution, for a
+  file that only exists in `/config` (GitHub doesn't have it yet), used
+  to delete that file from `/config` -- correct in isolation, but with a
+  brand-new or empty GitHub repo, *every* real file in `/config` is
+  "config-only," so a single click on the "GitHub wins for all" bulk
+  button could wipe your entire live configuration in one step. This is
+  the exact data-loss failure mode this add-on exists to prevent in the
+  old Git Pull add-on, reintroduced in a different screen. A file GitHub
+  doesn't have is now never deleted here, no matter what resolution is
+  picked (per-file or bulk) -- it's simply left untouched in `/config`
+  and picked up normally by a later Push. Enforced server-side
+  regardless of what the form submits; the per-file picker also no
+  longer offers "GitHub wins" at all for a file in this situation, and
+  the screen now states the guarantee up front.
+- Renamed the "/config wins" label to **"HA wins"** throughout the UI
+  (Initial import, Settings -> Sync scope, Full Sync, Compare, Status,
+  the Push conflict screen) and in the two places it becomes a real git
+  commit message in your repo's history -- matching the "HA wins" /
+  "GitHub wins" naming Sync policy already used, instead of a second,
+  differently-worded label for the same local side. Internal
+  values/URLs (`config_wins`, stored history rows) are unchanged; this
+  is a display-only rename.
+
+2 new regression tests covering both the bulk-button and a tampered
+per-file form submission. Full suite (252 tests) passes.
+
 ## 1.15.3 (2026-10-07)
 
-**Updated GitHub references after the repo owner's account rename
-(a4ng3i -> a4ng3i).**
+**Updated GitHub references after the repo owner's account rename.**
 
 - `config.yaml`'s `image:` field now points at
   `ghcr.io/a4ng3i/{arch}-ha-git-sync`. The build workflow already
   publishes new images under the account's current name automatically,
-  so leaving this field on the old name would have meant Supervisor kept
-  pulling a namespace that stopped receiving new version tags -- existing
-  installs would look for every future update and never find one.
+  so leaving this field on the previous name would have meant Supervisor
+  kept pulling a namespace that stopped receiving new version tags --
+  existing installs would look for every future update and never find
+  one.
 - Repository/source links in `repository.yaml`, `README.md`, and the
   add-on's OCI image label now point at `github.com/a4ng3i/...` instead
-  of the old `a4ng3i` username.
+  of the account's previous username.
 
 ## 1.15.2 (2026-10-05)
 
