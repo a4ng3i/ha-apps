@@ -2,7 +2,7 @@ name: "HA Git Sync"
 version: "1.16.1"
 slug: "ha-git-sync"
 description: "Safe, bidirectional Git sync for /config with staged pulls, validate-before-apply, automatic backups, and human-in-the-loop conflict resolution."
-url: "https://github.com/a4ng3i/ha-git-sync/tree/main/ha-git-sync"
+url: "https://github.com/a4ng3i/ha-apps/tree/main/ha-git-sync"
 # .github/workflows/build.yml publishes per-arch images to GHCR on every
 # push to main, tagged with this file's own `version:`. The image owner
 # here must match github.repository_owner (the account the repo lives
