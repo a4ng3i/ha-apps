@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.16.1 (2026-10-07)
+
+**Security/correctness fix: checking a single file in Settings -> Sync
+scope's picker (Selective mode) could silently also include a
+different, unrelated file elsewhere in `/config` that happens to share
+the same name.**
+
+- Checking a root-level file like `configuration.yaml` saved the include
+  pattern as the bare name `configuration.yaml` with no leading `/`. In
+  gitignore/gitwildmatch syntax (what Sync scope's patterns use), a
+  pattern with no `/` matches that basename **at any depth**, not just
+  where you picked it -- so that one checkbox also silently brought
+  `zigbee2mqtt/configuration.yaml` into scope (Zigbee2MQTT's own bridge
+  config file, which commonly holds the MQTT broker's username and
+  password), with no indication anywhere that anything beyond the
+  checked box was included. This is how an unrelated folder like
+  `zigbee2mqtt/` could show up in Settings -> Sync policy's picker, with
+  an inheritable/settable policy, despite never being checked in Sync
+  scope at all -- the giveaway that led to finding this.
+- Every pattern the picker saves is now anchored to `/config`'s root (a
+  leading `/`), so it only ever matches the exact file/folder you
+  checked. A hand-typed wildcard in the free-form "Additional include
+  patterns" box (anything with `*`, `?`, `[`, or `!`) is unaffected --
+  cross-tree matching is exactly what that box is for. Applies
+  automatically to patterns saved before this update too, the next time
+  they're read -- no manual re-saving needed.
+
+6 new tests, including an end-to-end reproduction of the exact scenario
+above. Full suite (264 tests) passes.
+
 ## 1.16.0 (2026-10-07)
 
 **The "conflicts need resolution" notice now clears itself automatically
