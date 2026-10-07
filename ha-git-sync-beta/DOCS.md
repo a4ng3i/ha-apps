@@ -133,7 +133,7 @@ it directly, or another device pushed to it), pushing your version would
 silently overwrite that change. Push holds that file back and lands you
 on the same confirmation page the secret scanner uses, with a diff of
 your version against GitHub's for each held-back file. Check any you want
-to push anyway (your local HA config version wins for that file) and click
+to push anyway (your HA version wins for that file) and click
 "Push checked files anyway"; anything left unchecked stays exactly as it
 is on both sides -- nothing is discarded -- and you can revisit it on a
 later push. Files that don't conflict are pushed immediately regardless,
@@ -151,11 +151,11 @@ Selective's include list) at any time. **Save selection** just stores the
 new scope and stops there -- nothing syncs, and the next normal pull/push
 (or file-watcher run) picks it up on its own.
 
-If you'd rather apply it immediately, pick a direction instead ("local HA
-config wins" or "GitHub wins") -- that saves the scope the same way, then
+If you'd rather apply it immediately, pick a direction instead ("HA
+wins" or "GitHub wins") -- that saves the scope the same way, then
 also walks you through the same confirmation page **Full Sync** uses (see
 below), so nothing is actually applied until you review the exact file
-list and confirm with Yes. Narrowing scope + "local HA config wins" is
+list and confirm with Yes. Narrowing scope + "HA wins" is
 what actually prunes GitHub down to match the new, smaller scope; "GitHub
 wins" never deletes an excluded-category file from live `/config` just
 because GitHub doesn't have it -- GitHub was never supposed to have it in
