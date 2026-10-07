@@ -1,16 +1,17 @@
 name: "HA Git Sync"
-version: "1.15.3"
+version: "1.16.1"
 slug: "ha-git-sync"
 description: "Safe, bidirectional Git sync for /config with staged pulls, validate-before-apply, automatic backups, and human-in-the-loop conflict resolution."
-url: "https://github.com/a4ng3i/ha-apps/tree/main/ha-git-sync"
-# This file is published from the source repo (private) on every release.
-# The image owner below must match wherever the source repo's build
-# workflow actually publishes (ghcr.io/<github.repository_owner>/...) --
-# keep this in sync by hand if that account/org ever changes.
+url: "https://github.com/a4ng3i/ha-git-sync/tree/main/ha-git-sync"
+# .github/workflows/build.yml publishes per-arch images to GHCR on every
+# push to main, tagged with this file's own `version:`. The image owner
+# here must match github.repository_owner (the account the repo lives
+# under) -- the workflow publishes there automatically on every push, so
+# this field has to be kept in sync by hand whenever the account/org
+# that owns the repo changes.
 # The GHCR packages (ghcr.io/a4ng3i/{arch}-ha-git-sync) are public, so
 # Supervisor can pull them anonymously -- this is what makes it do that
-# instead of building a Dockerfile locally on every install/update (this
-# repo doesn't even carry the Dockerfile/source, only this manifest).
+# instead of building the Dockerfile locally on every install/update.
 image: "ghcr.io/a4ng3i/{arch}-ha-git-sync"
 arch:
   - aarch64
@@ -22,7 +23,8 @@ panel_icon: mdi:source-branch
 panel_title: HA Git Sync
 # NOTE: this only hides the sidebar entry and blocks in-app navigation for
 # non-admins -- Home Assistant's ingress proxy does not enforce it at the
-# HTTP layer. The app enforces admin-only access itself via
+# HTTP layer (verified against Core/Supervisor source; see app/auth.py's
+# docstring). The app enforces admin-only access itself via
 # AdminOnlyMiddleware; this flag is defense in depth, not the real control.
 panel_admin: true
 map:

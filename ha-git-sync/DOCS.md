@@ -14,6 +14,9 @@ applied -- atomically, with a Supervisor backup snapshot taken immediately
 beforehand. If validation fails, every file that was written is restored
 from the snapshot automatically.
 
+See the top-level `README.md` in this repository and the design doc history
+in this repo for the full rationale.
+
 ## Setup
 
 1. Install the add-on, then open its Web UI (via the sidebar / Ingress).
@@ -51,7 +54,13 @@ from the snapshot automatically.
    GitHub repo, filtered to whatever scope you just picked. Nothing is
    written until you approve it here. This is the step that protects
    against the "empty repo silently wins" failure mode that hurt users of
-   the old Git Pull add-on.
+   the old Git Pull add-on. A hard safety rule applies here regardless of
+   what you pick: a file GitHub doesn't have yet is **never** deleted from
+   `/config` -- not per-file, and not even via the "GitHub wins for all"
+   bulk button. GitHub having nothing for a file isn't a vote to erase it;
+   with a brand-new/empty repo, every real file would otherwise be
+   "GitHub-only loses," which is exactly the old add-on's data-loss bug.
+   Such files are simply left alone and picked up by a normal Push later.
 
 ## What syncs, and what doesn't
 
@@ -124,7 +133,7 @@ it directly, or another device pushed to it), pushing your version would
 silently overwrite that change. Push holds that file back and lands you
 on the same confirmation page the secret scanner uses, with a diff of
 your version against GitHub's for each held-back file. Check any you want
-to push anyway (your `/config` version wins for that file) and click
+to push anyway (your HA version wins for that file) and click
 "Push checked files anyway"; anything left unchecked stays exactly as it
 is on both sides -- nothing is discarded -- and you can revisit it on a
 later push. Files that don't conflict are pushed immediately regardless,
@@ -142,12 +151,12 @@ Selective's include list) at any time. **Save selection** just stores the
 new scope and stops there -- nothing syncs, and the next normal pull/push
 (or file-watcher run) picks it up on its own.
 
-If you'd rather apply it immediately, pick a direction instead ("/config
-wins" or "GitHub wins") -- that saves the scope the same way, then also
-walks you through the same confirmation page **Full Sync** uses (see
+If you'd rather apply it immediately, pick a direction instead ("HA
+wins" or "GitHub wins") -- that saves the scope the same way, then
+also walks you through the same confirmation page **Full Sync** uses (see
 below), so nothing is actually applied until you review the exact file
-list and confirm with Yes. Narrowing scope + "/config wins" is what
-actually prunes GitHub down to match the new, smaller scope; "GitHub
+list and confirm with Yes. Narrowing scope + "HA wins" is
+what actually prunes GitHub down to match the new, smaller scope; "GitHub
 wins" never deletes an excluded-category file from live `/config` just
 because GitHub doesn't have it -- GitHub was never supposed to have it in
 the first place.
@@ -286,6 +295,13 @@ places, chosen in **Settings -> Notifications**:
   actual HA configuration; if it can't be loaded (e.g. no token from
   onboarding yet), type the service name manually instead (the part
   after `notify.`, e.g. `mobile_app_phone`).
+
+In the default mode, the "conflicts need resolution" notice clears itself
+automatically once every conflict it could refer to is resolved -- no
+need to visit the Notifications tab and clear it by hand. If it covered
+several files in one notice, resolving just one of them isn't enough to
+clear it; it stays until the last one is resolved too. Every other notice
+is unaffected by resolving a conflict.
 
 ## Backups
 
