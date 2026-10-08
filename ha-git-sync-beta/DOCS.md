@@ -18,6 +18,42 @@ backup automatically.
 See the top-level `README.md` in this repository and the design doc history
 in this repo for the full rationale.
 
+## Features
+
+- **Config validation before applying.** Every incoming change -- from a
+  Pull, a Full Sync, or conflict resolution -- is validated with Home
+  Assistant's own `check_config` before it's considered applied. If
+  validation fails, every file that was written is rolled back
+  automatically; nothing is left half-applied. See "Pull",
+  "Compare and Full Sync", and "Conflicts" below.
+- **Automatic local backups**, archived per sync operation (not a
+  Supervisor snapshot -- see "Backups" below) with configurable
+  retention from **Settings -> Backups**.
+- **Configurable reload policy** for domain reloads (Automations,
+  Scripts, Scenes, Dashboards): Manual (default), Automatic, Scheduled
+  (quiet hours), or Selective by domain -- see "Reload vs. restart"
+  below. A full Home Assistant restart is never auto-applied by any of
+  these; it's always a one-click notice.
+- **Secrets excluded by default**, not opt-out: `secrets.yaml`,
+  `.storage/`, the recorder database, and several other categories never
+  sync unless individually, explicitly turned on with a typed
+  confirmation phrase (**Settings -> Secret files**). On top of that, a
+  pattern/entropy-based **secret scanner** blocks any push containing
+  what looks like an API key or token even in a file that isn't already
+  excluded, with a one-time "push anyway" override per push or a
+  permanent per-file allowlist (**Settings -> Files flagged by the
+  secret scanner**) for files you've already reviewed. See "What syncs,
+  and what doesn't" below.
+- **SSH deploy key authentication** -- the add-on generates its own
+  ed25519 keypair; you add the public half to GitHub as a deploy key
+  with write access. No GitHub account credentials or personal access
+  token ever touch the add-on. Keys can be rotated from **Settings ->
+  Deploy key rotation** without ever being blind about it (the new key
+  is tested with a real push before the old one is deleted).
+- **Human-in-the-loop conflict resolution** -- a file changed on both
+  sides at once always goes to **Conflicts** for manual resolution; it's
+  never silently decided by whichever side happened to sync first.
+
 ## Setup
 
 1. Install the add-on, then open its Web UI (via the sidebar / Ingress).
