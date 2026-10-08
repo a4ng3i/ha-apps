@@ -439,3 +439,28 @@ exception is a short bootstrap window before you've completed onboarding
 step 2 (pasting the token) -- there's genuinely no way to ask Core who's
 an admin before that point, so requests are allowed through with a
 logged warning until a token is configured.
+
+## Possible future work
+
+Not implemented -- recorded here so the design thinking isn't lost, and
+because both of these would share one new building block: an optional
+GitHub API token (a fine-grained PAT scoped to just `Contents:
+Read and write` + `Pull requests: Write` on this one repo), kept
+separate from the SSH deploy key, which stays the only thing required
+for normal sync. Left unset, neither feature below does anything.
+
+- **Pull-request workflow.** Instead of pushing straight to the
+  configured branch, push to a side branch and open a PR via the GitHub
+  API (SSH alone can push a branch, but opening a PR needs the REST API,
+  which needs a token). Would need a Settings toggle ("push directly"
+  vs. "open a PR"), reuse-not-duplicate handling for a PR already open
+  on that branch, and a link/status shown on the Status page. Strictly
+  safer than today either way (adds a review gate).
+- **Dated GitHub Releases per sync.** A plain git tag per sync (e.g.
+  `sync-20260101T120000Z`) needs no new credential -- it's just a ref,
+  pushed with the existing deploy key. An actual GitHub *Release*
+  (title, notes, shows in the repo's Releases tab) needs the same
+  REST API token as the PR workflow above. Would need a Settings toggle
+  (off / every sync / Full Sync only) and its own retention policy, the
+  same "keep last N" shape **Settings -> Backups** already has for local
+  backup archives, applied to tags/releases instead.
