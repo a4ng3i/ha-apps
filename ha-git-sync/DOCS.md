@@ -10,12 +10,54 @@ The old community "Git Pull" add-on has documented reports of wiping
 never writes into `/config` directly from git. Every incoming change is
 staged in an isolated clone, diffed file-by-file against what's already on
 disk, validated with Home Assistant's own `check_config`, and only then
-applied -- atomically, with a Supervisor backup snapshot taken immediately
-beforehand. If validation fails, every file that was written is restored
-from the snapshot automatically.
+applied -- atomically, with the current content of every file about to
+change backed up locally immediately beforehand (see "Backups" below). If
+validation fails, every file that was written is restored from that
+backup automatically.
 
 See the top-level `README.md` in this repository and the design doc history
 in this repo for the full rationale.
+
+## Features
+
+- **Config validation before applying.** Every incoming change -- from a
+  Pull, a Full Sync, or conflict resolution -- is validated with Home
+  Assistant's own `check_config` before it's considered applied. If
+  validation fails, every file that was written is rolled back
+  automatically; nothing is left half-applied. See "Pull",
+  "Compare and Full Sync", and "Conflicts" below.
+- **Automatic local backups**, archived per sync operation (not a
+  Supervisor snapshot -- see "Backups" below) with configurable
+  retention from **Settings -> Backups**.
+- **Configurable reload policy** for domain reloads (Automations,
+  Scripts, Scenes, Dashboards): Manual (default), Automatic, Scheduled
+  (quiet hours), or Selective by domain -- see "Reload vs. restart"
+  below. A full Home Assistant restart is never auto-applied by any of
+  these; it's always a one-click notice.
+- **Secrets excluded by default**, not opt-out: `secrets.yaml`,
+  `.storage/`, the recorder database, and several other categories never
+  sync unless individually, explicitly turned on with a typed
+  confirmation phrase (**Settings -> Secret files**). On top of that, a
+  pattern/entropy-based **secret scanner** blocks any push containing
+  what looks like an API key or token even in a file that isn't already
+  excluded, with a one-time "push anyway" override per push or a
+  permanent per-file allowlist (**Settings -> Files flagged by the
+  secret scanner**) for files you've already reviewed. See "What syncs,
+  and what doesn't" below.
+- **SSH deploy key authentication** -- the add-on generates its own
+  ed25519 keypair; you add the public half to GitHub as a deploy key
+  with write access. No GitHub account credentials or personal access
+  token ever touch the add-on. Keys can be rotated from **Settings ->
+  Deploy key rotation** without ever being blind about it (the new key
+  is tested with a real push before the old one is deleted).
+- **Human-in-the-loop conflict resolution** -- a file changed on both
+  sides at once always goes to **Conflicts** for manual resolution; it's
+  never silently decided by whichever side happened to sync first.
+- **Status entities** (opt-in, **Settings -> Status entities**) --
+  publishes read-only sensors into Home Assistant itself (status, last
+  sync, last backup, open conflict, reload needed) so you can see
+  ha-git-sync's state from your own dashboards and automations, not just
+  this add-on's UI. See "Status entities" below.
 
 ## Setup
 
@@ -260,19 +302,34 @@ tab and lets you keep one side, or hand-edit a merge. Everything else that
 ## Reload vs. restart
 
 Automations, scripts, scenes, and Lovelace dashboards reload live once
-applied -- but the reload itself is never automatic. When a pull,
-conflict resolution, or Full Sync applies a change to one of those, the
-Status page shows a **"Reload needed"** banner naming exactly which of
-them (e.g. "Automations, Scripts") with a one-click **Reload now**
-button; nothing reloads until you click it. If more changes land before
-you get to it, the banner just grows to cover everything still pending --
-nothing is silently dropped.
+applied. What happens to that reload is controlled by **Settings ->
+Reload policy**:
 
-Anything touching `configuration.yaml` itself or `custom_components/`
-needs a full restart instead, which is never triggered automatically
-(unless you opt into a quiet-hours auto-restart in the add-on's
-Configuration tab) -- you'll see a "restart needed" notice, and you
-restart from Home Assistant's own UI when ready.
+- **Manual** (the default, and the only behavior before this setting
+  existed) -- nothing reloads automatically. When a pull, conflict
+  resolution, or Full Sync applies a change to one of those domains, the
+  Status page shows a **"Reload needed"** banner naming exactly which of
+  them (e.g. "Automations, Scripts") with a one-click **Reload now**
+  button; nothing reloads until you click it. If more changes land
+  before you get to it, the banner just grows to cover everything still
+  pending -- nothing is silently dropped.
+- **Automatic** -- every reload call runs immediately, with no approval
+  step. You still get a notice saying what was reloaded and why.
+- **Scheduled** -- reload calls run immediately if they land inside a
+  quiet-hours window you configure (e.g. 02:00-05:00); otherwise they're
+  queued like Manual, and picked up automatically the moment quiet hours
+  arrive (checked every few minutes in the background) rather than
+  sitting queued forever if the change happened outside the window.
+- **Selective** -- pick which domains (Automations, Scripts, Scenes,
+  Dashboards) reload automatically; every other domain is still queued
+  like Manual.
+
+Whichever mode you pick, a full Home Assistant **restart** is handled
+completely separately and is **never** auto-applied by any reload
+policy mode -- restarting all of Core is a much bigger action than a
+domain reload, so anything touching `configuration.yaml` itself or
+`custom_components/` always just shows a "restart needed" notice, and
+you restart from Home Assistant's own UI when ready.
 
 ## Notifications
 
@@ -305,27 +362,65 @@ is unaffected by resolving a conflict.
 
 ## Backups
 
-Every applied pull, conflict resolution, or Full Sync backs up each file
-it's about to change **before** touching it -- plain file copies, not a
-Supervisor snapshot (a previous version used a Supervisor partial backup
-of the whole `homeassistant` folder here; that made an otherwise-safe
-pull depend on the Supervisor backup subsystem being healthy, and a
-failure there -- an overloaded Supervisor, low disk space -- aborted the
-pull for a safety net nothing in the app ever actually restored from
-programmatically anyway).
+Every applied pull, conflict resolution, or Full Sync backs up the
+**current** content of each file it's about to change **before**
+touching it -- one dated, timestamped `.tar.gz` archive per operation,
+not a Supervisor snapshot (a previous version used a Supervisor partial
+backup of the whole `homeassistant` folder here; that made an
+otherwise-safe pull depend on the Supervisor backup subsystem being
+healthy, and a failure there -- an overloaded Supervisor, low disk
+space -- aborted the pull for a safety net nothing in the app ever
+actually restored from programmatically anyway).
 
 These live under `/backup/ha-git-sync/`, the same shared **Backups**
 storage location Home Assistant itself uses (so they're reachable outside
 the add-on too, e.g. from a Samba or File editor add-on if you have one).
-The folder hierarchy matches `/config`'s, and each file's own name gets
-the date and time worked into it -- e.g. `packages/kitchen.yaml` backs up
-to `/backup/ha-git-sync/packages/kitchen.20260101T120000Z.yaml` -- so
-browsing a folder shows every past version of a given file together,
-rather than needing to know which of many per-run folders to look in.
-There's currently no automatic pruning of old backups here (unlike
-Home Assistant's own Backups list, which rolls off by your retention
-settings) -- delete old ones from that folder yourself if you want to
-reclaim the space.
+Each archive is named after what triggered it and when -- e.g.
+`/backup/ha-git-sync/pull-20260101T120000Z.tar.gz` -- and preserves
+`/config`'s relative paths inside it, so extracting it (or opening it in
+any archive tool) reproduces exactly the files that were about to change,
+as they stood right before the change. A file that didn't exist yet
+(about to be newly created) has nothing to back up and is simply skipped.
+
+**Settings -> Backups** controls how many of these archives are kept --
+the oldest is deleted first, right after each new one is created. Set it
+to 0 to never auto-delete (the default before this setting existed);
+otherwise pick however many recent sync events you'd want to be able to
+go back to. This only prunes the archive files themselves -- it never
+touches `/config`.
+
+## Status entities
+
+Off by default -- nothing described here is created in your Home
+Assistant instance until you turn it on from **Settings -> Status
+entities**. Once enabled, a background job updates these every couple of
+minutes (not instantly on every change) using the same Home Assistant
+REST API connection (and the same long-lived token) already used for
+`check_config` and domain reloads -- no new credential, and no MQTT
+broker involved:
+
+- `sensor.ha_git_sync_status` -- `idle`, `syncing`, `conflict`,
+  `reload_needed`, or `error` (the most urgent of these that currently
+  applies -- a conflict always takes priority over a pending reload).
+- `sensor.ha_git_sync_last_sync` -- timestamp of the last successful
+  pull, push, conflict resolution, or Full Sync, with the direction as
+  an attribute.
+- `sensor.ha_git_sync_last_backup` -- timestamp of the most recent backup
+  archive (see "Backups" above).
+- `binary_sensor.ha_git_sync_conflict` -- on while any conflict is open.
+- `binary_sensor.ha_git_sync_reload_needed` -- on while a domain reload
+  is queued, with which domains as an attribute.
+
+There's deliberately no `restart_needed` entity yet -- whether a restart
+is still pending isn't currently tracked anywhere past a one-time
+notification, so there's nothing accurate to report; adding one needs a
+small persisted-state change first; see "Reload vs. restart" above.
+
+Turning this off marks every entity `unavailable` rather than leaving its
+last real value sitting there looking current. Home Assistant's REST API
+has no "delete a state" endpoint, so these fully disappear from Home
+Assistant only on its own next restart, same as any other non-integration
+ad-hoc state.
 
 ## Who can use this
 
@@ -344,3 +439,28 @@ exception is a short bootstrap window before you've completed onboarding
 step 2 (pasting the token) -- there's genuinely no way to ask Core who's
 an admin before that point, so requests are allowed through with a
 logged warning until a token is configured.
+
+## Possible future work
+
+Not implemented -- recorded here so the design thinking isn't lost, and
+because both of these would share one new building block: an optional
+GitHub API token (a fine-grained PAT scoped to just `Contents:
+Read and write` + `Pull requests: Write` on this one repo), kept
+separate from the SSH deploy key, which stays the only thing required
+for normal sync. Left unset, neither feature below does anything.
+
+- **Pull-request workflow.** Instead of pushing straight to the
+  configured branch, push to a side branch and open a PR via the GitHub
+  API (SSH alone can push a branch, but opening a PR needs the REST API,
+  which needs a token). Would need a Settings toggle ("push directly"
+  vs. "open a PR"), reuse-not-duplicate handling for a PR already open
+  on that branch, and a link/status shown on the Status page. Strictly
+  safer than today either way (adds a review gate).
+- **Dated GitHub Releases per sync.** A plain git tag per sync (e.g.
+  `sync-20260101T120000Z`) needs no new credential -- it's just a ref,
+  pushed with the existing deploy key. An actual GitHub *Release*
+  (title, notes, shows in the repo's Releases tab) needs the same
+  REST API token as the PR workflow above. Would need a Settings toggle
+  (off / every sync / Full Sync only) and its own retention policy, the
+  same "keep last N" shape **Settings -> Backups** already has for local
+  backup archives, applied to tags/releases instead.

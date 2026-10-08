@@ -1,5 +1,62 @@
 # Changelog
 
+## 1.18.0 (2026-10-08)
+
+**New: opt-in Home Assistant status entities.**
+
+- **Settings -> Status entities** (off by default) publishes a handful
+  of read-only entities into Home Assistant itself --
+  `sensor.ha_git_sync_status` (`idle` / `syncing` / `conflict` /
+  `reload_needed` / `error`), `sensor.ha_git_sync_last_sync`,
+  `sensor.ha_git_sync_last_backup`, `binary_sensor.ha_git_sync_conflict`,
+  and `binary_sensor.ha_git_sync_reload_needed` -- so you can see
+  ha-git-sync's state from your own dashboards and automations, not just
+  this add-on's UI. Uses the same Home Assistant REST API connection and
+  token already configured for config validation and reloads: no new
+  credential, and no MQTT broker involved. Updated every couple of
+  minutes by a background job; turning the setting back off marks every
+  entity `unavailable` instead of leaving a stale value looking current.
+- Also documented, in a new DOCS.md "Features" section: config
+  validation before applying, secret scanning/allowlisting, and SSH
+  deploy key authentication -- all already implemented, just not
+  previously summarized in one place.
+
+25 new tests (status computation for every state, settings persistence,
+the new Settings route, and the background sweep job). Full suite (325
+tests) passes.
+
+## 1.17.0 (2026-10-08)
+
+**New: configurable backup retention, and a configurable reload policy for
+domain reloads (Automations/Scripts/Scenes/Dashboards).**
+
+- **Backups.** Every pull, conflict resolution, or Full Sync now backs up
+  the files it's about to change into one dated, timestamped `.tar.gz`
+  archive per operation (e.g. `pull-20260101T120000Z.tar.gz`) under the
+  add-on's shared `/backup/ha-git-sync/` folder, instead of one loose
+  file copy per changed file. **Settings -> Backups** lets you set how
+  many of these archives to keep -- the oldest is deleted first after
+  each new one, or set it to 0 to never auto-delete (the previous,
+  unlimited behavior). This only ever prunes old backup archives; it
+  never touches `/config`.
+- **Reload policy.** Previously, a domain reload (Automations, Scripts,
+  Scenes, Dashboards) triggered by a pull or Full Sync always waited for
+  a manual "Reload now" click on the Status page -- no exceptions.
+  **Settings -> Reload policy** now lets you choose: **Manual** (that
+  same behavior, still the default), **Automatic** (reload immediately,
+  no approval step), **Scheduled** (reload immediately during a quiet-
+  hours window you configure, otherwise queued and picked up
+  automatically once quiet hours arrive), or **Selective** (automatic
+  for specific domains you pick, manual for the rest). A full Home
+  Assistant restart is unaffected by this setting either way -- it's
+  never auto-applied by any reload policy mode, and still just shows a
+  one-click "restart needed" notice.
+
+36 new tests (backup archive creation/retention/pruning, the reload
+policy's four modes and quiet-hours logic, the new Settings routes, and
+the background sweep job that applies a queued "Scheduled"-mode reload
+once quiet hours arrive). Full suite (300 tests) passes.
+
 ## 1.16.1 (2026-10-07)
 
 **Security/correctness fix: checking a single file in Settings -> Sync
