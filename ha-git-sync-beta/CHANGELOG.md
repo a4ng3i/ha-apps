@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.18.0 (2026-10-08)
+
+**New: opt-in Home Assistant status entities.**
+
+- **Settings -> Status entities** (off by default) publishes a handful
+  of read-only entities into Home Assistant itself --
+  `sensor.ha_git_sync_status` (`idle` / `syncing` / `conflict` /
+  `reload_needed` / `error`), `sensor.ha_git_sync_last_sync`,
+  `sensor.ha_git_sync_last_backup`, `binary_sensor.ha_git_sync_conflict`,
+  and `binary_sensor.ha_git_sync_reload_needed` -- so you can see
+  ha-git-sync's state from your own dashboards and automations, not just
+  this add-on's UI. Uses the same Home Assistant REST API connection and
+  token already configured for config validation and reloads: no new
+  credential, and no MQTT broker involved. Updated every couple of
+  minutes by a background job; turning the setting back off marks every
+  entity `unavailable` instead of leaving a stale value looking current.
+- Also documented, in a new DOCS.md "Features" section: config
+  validation before applying, secret scanning/allowlisting, and SSH
+  deploy key authentication -- all already implemented, just not
+  previously summarized in one place.
+
+25 new tests (status computation for every state, settings persistence,
+the new Settings route, and the background sweep job). Full suite (325
+tests) passes.
+
 ## 1.17.0 (2026-10-08)
 
 **New: configurable backup retention, and a configurable reload policy for

@@ -53,6 +53,11 @@ in this repo for the full rationale.
 - **Human-in-the-loop conflict resolution** -- a file changed on both
   sides at once always goes to **Conflicts** for manual resolution; it's
   never silently decided by whichever side happened to sync first.
+- **Status entities** (opt-in, **Settings -> Status entities**) --
+  publishes read-only sensors into Home Assistant itself (status, last
+  sync, last backup, open conflict, reload needed) so you can see
+  ha-git-sync's state from your own dashboards and automations, not just
+  this add-on's UI. See "Status entities" below.
 
 ## Setup
 
@@ -383,6 +388,39 @@ to 0 to never auto-delete (the default before this setting existed);
 otherwise pick however many recent sync events you'd want to be able to
 go back to. This only prunes the archive files themselves -- it never
 touches `/config`.
+
+## Status entities
+
+Off by default -- nothing described here is created in your Home
+Assistant instance until you turn it on from **Settings -> Status
+entities**. Once enabled, a background job updates these every couple of
+minutes (not instantly on every change) using the same Home Assistant
+REST API connection (and the same long-lived token) already used for
+`check_config` and domain reloads -- no new credential, and no MQTT
+broker involved:
+
+- `sensor.ha_git_sync_status` -- `idle`, `syncing`, `conflict`,
+  `reload_needed`, or `error` (the most urgent of these that currently
+  applies -- a conflict always takes priority over a pending reload).
+- `sensor.ha_git_sync_last_sync` -- timestamp of the last successful
+  pull, push, conflict resolution, or Full Sync, with the direction as
+  an attribute.
+- `sensor.ha_git_sync_last_backup` -- timestamp of the most recent backup
+  archive (see "Backups" above).
+- `binary_sensor.ha_git_sync_conflict` -- on while any conflict is open.
+- `binary_sensor.ha_git_sync_reload_needed` -- on while a domain reload
+  is queued, with which domains as an attribute.
+
+There's deliberately no `restart_needed` entity yet -- whether a restart
+is still pending isn't currently tracked anywhere past a one-time
+notification, so there's nothing accurate to report; adding one needs a
+small persisted-state change first; see "Reload vs. restart" above.
+
+Turning this off marks every entity `unavailable` rather than leaving its
+last real value sitting there looking current. Home Assistant's REST API
+has no "delete a state" endpoint, so these fully disappear from Home
+Assistant only on its own next restart, same as any other non-integration
+ad-hoc state.
 
 ## Who can use this
 
