@@ -10,9 +10,10 @@ The old community "Git Pull" add-on has documented reports of wiping
 never writes into `/config` directly from git. Every incoming change is
 staged in an isolated clone, diffed file-by-file against what's already on
 disk, validated with Home Assistant's own `check_config`, and only then
-applied -- atomically, with a Supervisor backup snapshot taken immediately
-beforehand. If validation fails, every file that was written is restored
-from the snapshot automatically.
+applied -- atomically, with the current content of every file about to
+change backed up locally immediately beforehand (see "Backups" below). If
+validation fails, every file that was written is restored from that
+backup automatically.
 
 See the top-level `README.md` in this repository and the design doc history
 in this repo for the full rationale.
@@ -260,19 +261,34 @@ tab and lets you keep one side, or hand-edit a merge. Everything else that
 ## Reload vs. restart
 
 Automations, scripts, scenes, and Lovelace dashboards reload live once
-applied -- but the reload itself is never automatic. When a pull,
-conflict resolution, or Full Sync applies a change to one of those, the
-Status page shows a **"Reload needed"** banner naming exactly which of
-them (e.g. "Automations, Scripts") with a one-click **Reload now**
-button; nothing reloads until you click it. If more changes land before
-you get to it, the banner just grows to cover everything still pending --
-nothing is silently dropped.
+applied. What happens to that reload is controlled by **Settings ->
+Reload policy**:
 
-Anything touching `configuration.yaml` itself or `custom_components/`
-needs a full restart instead, which is never triggered automatically
-(unless you opt into a quiet-hours auto-restart in the add-on's
-Configuration tab) -- you'll see a "restart needed" notice, and you
-restart from Home Assistant's own UI when ready.
+- **Manual** (the default, and the only behavior before this setting
+  existed) -- nothing reloads automatically. When a pull, conflict
+  resolution, or Full Sync applies a change to one of those domains, the
+  Status page shows a **"Reload needed"** banner naming exactly which of
+  them (e.g. "Automations, Scripts") with a one-click **Reload now**
+  button; nothing reloads until you click it. If more changes land
+  before you get to it, the banner just grows to cover everything still
+  pending -- nothing is silently dropped.
+- **Automatic** -- every reload call runs immediately, with no approval
+  step. You still get a notice saying what was reloaded and why.
+- **Scheduled** -- reload calls run immediately if they land inside a
+  quiet-hours window you configure (e.g. 02:00-05:00); otherwise they're
+  queued like Manual, and picked up automatically the moment quiet hours
+  arrive (checked every few minutes in the background) rather than
+  sitting queued forever if the change happened outside the window.
+- **Selective** -- pick which domains (Automations, Scripts, Scenes,
+  Dashboards) reload automatically; every other domain is still queued
+  like Manual.
+
+Whichever mode you pick, a full Home Assistant **restart** is handled
+completely separately and is **never** auto-applied by any reload
+policy mode -- restarting all of Core is a much bigger action than a
+domain reload, so anything touching `configuration.yaml` itself or
+`custom_components/` always just shows a "restart needed" notice, and
+you restart from Home Assistant's own UI when ready.
 
 ## Notifications
 
@@ -305,27 +321,32 @@ is unaffected by resolving a conflict.
 
 ## Backups
 
-Every applied pull, conflict resolution, or Full Sync backs up each file
-it's about to change **before** touching it -- plain file copies, not a
-Supervisor snapshot (a previous version used a Supervisor partial backup
-of the whole `homeassistant` folder here; that made an otherwise-safe
-pull depend on the Supervisor backup subsystem being healthy, and a
-failure there -- an overloaded Supervisor, low disk space -- aborted the
-pull for a safety net nothing in the app ever actually restored from
-programmatically anyway).
+Every applied pull, conflict resolution, or Full Sync backs up the
+**current** content of each file it's about to change **before**
+touching it -- one dated, timestamped `.tar.gz` archive per operation,
+not a Supervisor snapshot (a previous version used a Supervisor partial
+backup of the whole `homeassistant` folder here; that made an
+otherwise-safe pull depend on the Supervisor backup subsystem being
+healthy, and a failure there -- an overloaded Supervisor, low disk
+space -- aborted the pull for a safety net nothing in the app ever
+actually restored from programmatically anyway).
 
 These live under `/backup/ha-git-sync/`, the same shared **Backups**
 storage location Home Assistant itself uses (so they're reachable outside
 the add-on too, e.g. from a Samba or File editor add-on if you have one).
-The folder hierarchy matches `/config`'s, and each file's own name gets
-the date and time worked into it -- e.g. `packages/kitchen.yaml` backs up
-to `/backup/ha-git-sync/packages/kitchen.20260101T120000Z.yaml` -- so
-browsing a folder shows every past version of a given file together,
-rather than needing to know which of many per-run folders to look in.
-There's currently no automatic pruning of old backups here (unlike
-Home Assistant's own Backups list, which rolls off by your retention
-settings) -- delete old ones from that folder yourself if you want to
-reclaim the space.
+Each archive is named after what triggered it and when -- e.g.
+`/backup/ha-git-sync/pull-20260101T120000Z.tar.gz` -- and preserves
+`/config`'s relative paths inside it, so extracting it (or opening it in
+any archive tool) reproduces exactly the files that were about to change,
+as they stood right before the change. A file that didn't exist yet
+(about to be newly created) has nothing to back up and is simply skipped.
+
+**Settings -> Backups** controls how many of these archives are kept --
+the oldest is deleted first, right after each new one is created. Set it
+to 0 to never auto-delete (the default before this setting existed);
+otherwise pick however many recent sync events you'd want to be able to
+go back to. This only prunes the archive files themselves -- it never
+touches `/config`.
 
 ## Who can use this
 

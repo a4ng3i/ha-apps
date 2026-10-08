@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.17.0 (2026-10-08)
+
+**New: configurable backup retention, and a configurable reload policy for
+domain reloads (Automations/Scripts/Scenes/Dashboards).**
+
+- **Backups.** Every pull, conflict resolution, or Full Sync now backs up
+  the files it's about to change into one dated, timestamped `.tar.gz`
+  archive per operation (e.g. `pull-20260101T120000Z.tar.gz`) under the
+  add-on's shared `/backup/ha-git-sync/` folder, instead of one loose
+  file copy per changed file. **Settings -> Backups** lets you set how
+  many of these archives to keep -- the oldest is deleted first after
+  each new one, or set it to 0 to never auto-delete (the previous,
+  unlimited behavior). This only ever prunes old backup archives; it
+  never touches `/config`.
+- **Reload policy.** Previously, a domain reload (Automations, Scripts,
+  Scenes, Dashboards) triggered by a pull or Full Sync always waited for
+  a manual "Reload now" click on the Status page -- no exceptions.
+  **Settings -> Reload policy** now lets you choose: **Manual** (that
+  same behavior, still the default), **Automatic** (reload immediately,
+  no approval step), **Scheduled** (reload immediately during a quiet-
+  hours window you configure, otherwise queued and picked up
+  automatically once quiet hours arrive), or **Selective** (automatic
+  for specific domains you pick, manual for the rest). A full Home
+  Assistant restart is unaffected by this setting either way -- it's
+  never auto-applied by any reload policy mode, and still just shows a
+  one-click "restart needed" notice.
+
+36 new tests (backup archive creation/retention/pruning, the reload
+policy's four modes and quiet-hours logic, the new Settings routes, and
+the background sweep job that applies a queued "Scheduled"-mode reload
+once quiet hours arrive). Full suite (300 tests) passes.
+
 ## 1.16.1 (2026-10-07)
 
 **Security/correctness fix: checking a single file in Settings -> Sync
