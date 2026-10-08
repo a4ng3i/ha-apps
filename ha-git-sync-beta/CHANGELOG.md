@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.19.0 (2026-10-08)
+
+**Wired up the previously-inert `auto_restart_quiet_hours` option, and
+added a "Restart needed" banner.**
+
+- The add-on's Configuration tab has had an `auto_restart_quiet_hours`
+  option since early on, described as auto-applying a pending restart
+  during quiet hours -- but it was never actually read anywhere, so
+  turning it on silently did nothing. It's now wired up for real: when
+  on (still off by default), a background job restarts Home Assistant
+  automatically once it's both pending and inside the quiet-hours
+  window already configured in **Settings -> Reload policy** (the same
+  window "Scheduled" reload mode uses -- no second window to configure).
+- Whether or not that option is on, the Status page now shows a
+  **"Restart needed"** banner (previously just a one-time notification,
+  easy to miss and impossible to dismiss) naming why, with an **"I've
+  already restarted Home Assistant"** button to clear it -- the only
+  way to clear it when the automatic option is off, since this app has
+  no way to detect a restart performed from Core's own UI on its own.
+- Added the `binary_sensor.ha_git_sync_restart_needed` status entity
+  (Settings -> Status entities), completing the set from last release --
+  it was deliberately left out then because nothing persisted whether a
+  restart was pending; it does now.
+
+24 new tests (pending-restart persistence, the background restart
+sweep's every no-op/success/failure path, the new banner and dismiss
+route, and the new status entity). Full suite (349 tests) passes.
+
 ## 1.18.0 (2026-10-08)
 
 **New: opt-in Home Assistant status entities.**

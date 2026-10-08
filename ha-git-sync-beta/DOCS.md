@@ -33,7 +33,10 @@ in this repo for the full rationale.
   Scripts, Scenes, Dashboards): Manual (default), Automatic, Scheduled
   (quiet hours), or Selective by domain -- see "Reload vs. restart"
   below. A full Home Assistant restart is never auto-applied by any of
-  these; it's always a one-click notice.
+  these reload-policy modes; it's always a banner with a manual
+  dismiss, unless you separately opt into the Configuration tab's
+  `auto_restart_quiet_hours` (off by default), which reuses the same
+  quiet-hours window to restart Core automatically.
 - **Secrets excluded by default**, not opt-out: `secrets.yaml`,
   `.storage/`, the recorder database, and several other categories never
   sync unless individually, explicitly turned on with a typed
@@ -55,9 +58,9 @@ in this repo for the full rationale.
   never silently decided by whichever side happened to sync first.
 - **Status entities** (opt-in, **Settings -> Status entities**) --
   publishes read-only sensors into Home Assistant itself (status, last
-  sync, last backup, open conflict, reload needed) so you can see
-  ha-git-sync's state from your own dashboards and automations, not just
-  this add-on's UI. See "Status entities" below.
+  sync, last backup, open conflict, reload needed, restart needed) so
+  you can see ha-git-sync's state from your own dashboards and
+  automations, not just this add-on's UI. See "Status entities" below.
 
 ## Setup
 
@@ -325,11 +328,26 @@ Reload policy**:
   like Manual.
 
 Whichever mode you pick, a full Home Assistant **restart** is handled
-completely separately and is **never** auto-applied by any reload
-policy mode -- restarting all of Core is a much bigger action than a
-domain reload, so anything touching `configuration.yaml` itself or
-`custom_components/` always just shows a "restart needed" notice, and
-you restart from Home Assistant's own UI when ready.
+completely separately from reload policy -- restarting all of Core is a
+much bigger action than a domain reload, so anything touching
+`configuration.yaml` itself or `custom_components/` always shows a
+**"Restart needed"** banner on the Status page naming why, with an
+**"I've already restarted Home Assistant"** button to clear it once you
+have (from Core's own UI -- this app never restarts Core on its own
+unless you opt into the setting below).
+
+By default that banner is the only thing that happens -- nothing
+restarts Core automatically. The add-on's **Configuration tab** has a
+separate **`auto_restart_quiet_hours`** option (off by default) that, if
+turned on, restarts Core automatically once the *same* quiet-hours
+window configured above in Settings -> Reload policy arrives, the same
+way "Scheduled" reload mode picks up a queued reload -- checked every
+few minutes in the background, so a restart that became needed outside
+the window isn't left pending indefinitely while this option is on. The
+"Restart needed" banner says so when it's in effect, and still offers
+the manual "I've already restarted" button either way, since a restart
+performed from Home Assistant's own UI (or Supervisor) is something
+this app genuinely can't detect on its own.
 
 ## Notifications
 
@@ -400,8 +418,9 @@ REST API connection (and the same long-lived token) already used for
 broker involved:
 
 - `sensor.ha_git_sync_status` -- `idle`, `syncing`, `conflict`,
-  `reload_needed`, or `error` (the most urgent of these that currently
-  applies -- a conflict always takes priority over a pending reload).
+  `restart_needed`, `reload_needed`, or `error` (the most urgent of
+  these that currently applies, in that order -- e.g. a conflict always
+  takes priority over a pending reload).
 - `sensor.ha_git_sync_last_sync` -- timestamp of the last successful
   pull, push, conflict resolution, or Full Sync, with the direction as
   an attribute.
@@ -410,11 +429,9 @@ broker involved:
 - `binary_sensor.ha_git_sync_conflict` -- on while any conflict is open.
 - `binary_sensor.ha_git_sync_reload_needed` -- on while a domain reload
   is queued, with which domains as an attribute.
-
-There's deliberately no `restart_needed` entity yet -- whether a restart
-is still pending isn't currently tracked anywhere past a one-time
-notification, so there's nothing accurate to report; adding one needs a
-small persisted-state change first; see "Reload vs. restart" above.
+- `binary_sensor.ha_git_sync_restart_needed` -- on while a restart is
+  pending, with why as an attribute; see "Reload vs. restart" above for
+  how it gets cleared.
 
 Turning this off marks every entity `unavailable` rather than leaving its
 last real value sitting there looking current. Home Assistant's REST API
