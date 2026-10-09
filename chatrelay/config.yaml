@@ -1,0 +1,38 @@
+name: "ChatRelay"
+version: "0.10.0"
+slug: "chatrelay"
+description: "Expose an OpenAI-compatible API backed by consumer AI chat subscriptions (private use)"
+url: "https://github.com/a4ng3i/ha-apps/tree/main/chatrelay"
+# .github/workflows/publish-images.yml publishes per-arch images to GHCR
+# on every push to main/uat, tagged with this file's own `version:` and
+# `latest`. It also pushes this add-on's public install manifest to
+# a4ng3i/ha-apps (main -> chatrelay/, uat -> the -beta channel) -
+# that's the repo Home Assistant users actually add; this repo's own
+# source stays private. See a4ng3i/ha-apps for the public listing.
+image: "ghcr.io/a4ng3i/{arch}-chatrelay"
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+ingress: false
+host_network: false
+ports:
+  8420/tcp: 8420
+ports_description:
+  8420/tcp: "OpenAI-compatible API (/api) and admin dashboard (/admin)"
+options:
+  master_key: ""
+  log_level: "INFO"
+  headless: true
+  global_ip_allowlist: ""
+  admin_username: "admin"
+  admin_password: ""
+schema:
+  master_key: "password"
+  log_level: "list(DEBUG|INFO|WARNING|ERROR)"
+  headless: "bool"
+  global_ip_allowlist: "str"
+  admin_username: "str"
+  admin_password: "password"
