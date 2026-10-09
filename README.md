@@ -38,8 +38,27 @@ engines racing to push/pull the same `/config` is exactly the kind of
 conflict this add-on exists to prevent. Use a separate test repo for the
 beta instance, or leave its Sync policy on manual (the default).
 
+### AI-API2Chat-Router
+
+Exposes an OpenAI-compatible API backed by your own logged-in browser
+sessions on consumer AI chat products (Claude, ChatGPT, Gemini, DeepSeek,
+Grok, Perplexity) -- any app that speaks the OpenAI API can use your
+existing chat subscriptions instead of a metered API key. **Read
+[`ai-api2chat-router/DOCS.md`](ai-api2chat-router/DOCS.md) before
+installing** -- this automates consumer chat accounts, which is
+typically against those products' Terms of Service even on an account
+you already pay for; built for private personal use only.
+
+### AI-API2Chat-Router (Beta)
+
+Same add-on, built from the source repo's `uat` branch. Independent
+install from production: its own slug, its own `/data`. Treat it as a
+preview, not something to depend on.
+
 ## Updates
 
-Each add-on's `config.yaml` here points at a pre-built image in GHCR
-(`ghcr.io/a4ng3i/...`), published publicly. Installing/updating pulls that
+Each add-on's `config.yaml` here points at a pre-built image in GHCR,
+published publicly -- `ghcr.io/a4ng3i/...` for this account's own
+add-ons, `ghcr.io/aharoncg/...` for AI-API2Chat-Router (built from its
+own, separately-owned source repo). Installing/updating pulls that
 image directly -- nothing is built on your Home Assistant instance.
