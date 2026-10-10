@@ -3,6 +3,22 @@
 Versioning: `x.y.z` - x = major, y = minor, z = bugfix.
 Bumping y resets z to 0. Bumping x resets y and z to 0.
 
+## [0.10.1] - 2026-10-10
+
+### Fixed
+- The HA add-on's per-arch GHCR images were published to the wrong path.
+  `publish-images.yml`'s `prep` job computed `image_base` as
+  `ghcr.io/<owner>/<repo>` (needed by the standalone image job), but the
+  `ha-addon` job then appended `/{arch}-chatrelay` onto that same value,
+  producing a nested path (`ghcr.io/a4ng3i/chatrelay/amd64-chatrelay`)
+  instead of `ghcr.io/a4ng3i/amd64-chatrelay` - which is what
+  `config.yaml`'s `image:` field actually pulls. Supervisor install
+  failed with a 403 on the manifest HEAD request as a result. This bug
+  predates the ChatRelay rename - it's been there since the 0.9.0
+  per-arch image naming change. Added a separate `owner_base`
+  (`ghcr.io/<owner>`, no repo segment) output for the `ha-addon` job to
+  use instead.
+
 ## [0.10.0] - 2026-10-09
 
 ### Changed
