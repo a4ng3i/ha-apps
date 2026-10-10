@@ -1,5 +1,5 @@
 name: "ChatRelay (Beta)"
-version: "0.10.0"
+version: "0.10.1"
 slug: "chatrelay-beta"
 description: "BETA/testing channel, built from the uat branch. Independent install from the production add-on - own slug, own /data."
 url: "https://github.com/a4ng3i/ha-apps/tree/main/chatrelay-beta"
