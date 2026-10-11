@@ -3,6 +3,50 @@
 Versioning: `x.y.z` - x = major, y = minor, z = bugfix.
 Bumping y resets z to 0. Bumping x resets y and z to 0.
 
+## [0.11.1] - 2026-10-11
+
+### Fixed
+- The 0.11.0 CI build hung indefinitely (reproduced twice, ~2 hours
+  combined, across all three image jobs - standalone, HA amd64, HA
+  aarch64 - all stuck at the same `apt-get install xvfb x11vnc novnc`
+  step) instead of failing outright: a transitive dependency
+  (`tzdata`, pulled in by one of those packages) prompts for a
+  timezone via debconf, and with no TTY attached in a CI build that
+  blocks forever rather than erroring. Both Dockerfiles now set
+  `DEBIAN_FRONTEND=noninteractive` and `TZ=Etc/UTC` on that `apt-get`
+  call.
+
+## [0.11.0] - 2026-10-10
+
+### Added
+- **First-run setup from the browser, no other machine needed.**
+  `/admin/setup` (unauthenticated, only usable before each secret is
+  configured) generates `master_key` and `admin_password` and - when
+  running as the HA add-on - writes them straight into the add-on's
+  own Configuration options via the Supervisor API and restarts it
+  (`app/core/supervisor.py`, `app/api/setup.py`, `hassio_api: true` in
+  `config.yaml`). In plain Docker (no Supervisor), the generated value
+  is just shown for you to paste into `.env`. `run.sh` no longer
+  refuses to start without a master key - it starts anyway so
+  `/admin/setup` is reachable, and warns instead of exiting.
+- **Log in to a provider from the admin dashboard itself.** A headed
+  Chromium now runs inside the container on a virtual display (Xvfb),
+  with its screen streamed into `/admin` over a WebSocket using
+  noVNC's client (`app/core/remote_login.py`; `xvfb`/`x11vnc`/`novnc`
+  added to both Dockerfiles). Pick a provider and plan, click Start,
+  complete SSO/MFA directly in the embedded screen, click "I'm logged
+  in - save session" - the resulting profile is encrypted and stored
+  the same way `scripts/manage_credentials.py login` already did.
+  Only one login session runs at a time and it auto-expires after 20
+  minutes. `scripts/manage_credentials.py login` is kept as the
+  documented fallback for accounts that require a hardware security
+  key or platform passkey (Touch ID/Windows Hello/FIDO2) - those need
+  the authenticator physically present on the machine running the
+  browser, which a remote screen can never provide.
+- `GET /admin/api/providers/catalog`, `POST /admin/api/remote-login/start`,
+  `POST /admin/api/remote-login/stop`, `GET /admin/api/remote-login/status`,
+  `WS /admin/api/remote-login/ws` - the backend for the above.
+
 ## [0.10.1] - 2026-10-10
 
 ### Fixed

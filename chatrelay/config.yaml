@@ -1,5 +1,5 @@
 name: "ChatRelay"
-version: "0.10.1"
+version: "0.11.1"
 slug: "chatrelay"
 description: "Expose an OpenAI-compatible API backed by consumer AI chat subscriptions (private use)"
 url: "https://github.com/a4ng3i/ha-apps/tree/main/chatrelay"
@@ -18,6 +18,12 @@ boot: auto
 init: false
 ingress: false
 host_network: false
+# Lets the add-on call the Supervisor API to write a generated
+# master_key/admin_password into its own Configuration options and
+# restart itself (see app/api/setup.py, app/core/supervisor.py) -
+# that's what makes first-run setup possible entirely from the
+# add-on's own web UI, no separate command anywhere else.
+hassio_api: true
 ports:
   8420/tcp: 8420
 ports_description:
