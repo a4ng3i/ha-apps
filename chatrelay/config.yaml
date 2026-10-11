@@ -1,5 +1,5 @@
 name: "ChatRelay"
-version: "0.11.1"
+version: "0.11.2"
 slug: "chatrelay"
 description: "Expose an OpenAI-compatible API backed by consumer AI chat subscriptions (private use)"
 url: "https://github.com/a4ng3i/ha-apps/tree/main/chatrelay"
