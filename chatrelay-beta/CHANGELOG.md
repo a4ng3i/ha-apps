@@ -3,6 +3,19 @@
 Versioning: `x.y.z` - x = major, y = minor, z = bugfix.
 Bumping y resets z to 0. Bumping x resets y and z to 0.
 
+## [0.11.2] - 2026-10-12
+
+### Fixed
+- The HA add-on failed to start with `exec /run.sh: no such file or
+  directory`. `run.sh`'s shebang was `#!/usr/bin/with-contenv bashio`,
+  but `with-contenv` comes from s6-overlay, which only HA's own base
+  images include; this image is built on Playwright's, so the
+  interpreter didn't exist. Present since the initial scaffold, only
+  surfaced now because earlier releases never got as far as starting
+  (see 0.10.1). Shebang is now `#!/usr/bin/env bashio`, `jq` (which
+  `bashio::config` needs) is installed in the HA image, and unset
+  options returned by bashio as the string `null` are treated as empty.
+
 ## [0.11.1] - 2026-10-11
 
 ### Fixed
