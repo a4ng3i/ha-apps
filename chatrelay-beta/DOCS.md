@@ -19,32 +19,39 @@ banned.
 
 ## Setup
 
-1. Start the add-on once with `master_key` set (Configuration tab;
-   generate one with `python3 -c "from cryptography.fernet import
-   Fernet; print(Fernet.generate_key().decode())"` on any machine with
-   Python). This is what encrypts everything the add-on stores. If you
-   also want the admin dashboard, set `admin_password` too (generate a
-   random string the same way, or with
-   `python3 -c "import secrets; print(secrets.token_urlsafe(24))"`).
-2. **Log in to each AI provider from your own machine, not from Home
-   Assistant.** The add-on's container has no display to show a login
-   window on, and login needs a real browser (for SSO redirects and
-   MFA). On your own machine, clone the source repo, then:
+1. Start the add-on (it starts fine with no options set). Open
+   `http://homeassistant.local:8420/admin/setup` and click "Generate
+   master key" - this encrypts everything the add-on stores, and is
+   written straight into the add-on's Configuration options and
+   restarted for you, no separate command, no other machine. Click
+   "Generate admin password" the same way to enable the `/admin`
+   dashboard.
+2. **Log in to each AI provider from the `/admin` dashboard itself**
+   (`http://homeassistant.local:8420/admin`, under "Log in to a
+   provider"). This runs a real browser inside the add-on's container
+   and streams its screen to you over the page - pick a provider and
+   plan, click Start, and complete login (SSO redirects, SMS codes,
+   authenticator-app TOTP all work normally) right there, then click
+   "I'm logged in - save session".
+
+   Hardware security keys and platform passkeys (Touch ID, Windows
+   Hello, a FIDO2 key) are the one thing this can't do - the
+   authenticator has to be physically present on whatever machine is
+   actually running the browser, which here is the add-on's container,
+   not your phone or laptop. For those accounts only, fall back to the
+   local CLI flow: on your own machine,
    ```bash
    pip install -r requirements.txt
    playwright install chromium
    MIDDLEWARE_MASTER_KEY=<same key as above> MIDDLEWARE_DATA_DIR=./data \
      python scripts/manage_credentials.py login claude --variant pro
    ```
-   A browser opens; log in (SSO/MFA included), press Enter in the
-   terminal once you're at the chat screen. Repeat per provider, then
-   copy the resulting `./data/credentials.enc` and
-   `./data/browser_profiles/` into the add-on's `/data` (Samba/File
-   editor add-on, or `scp` if SSH is enabled on the host) - both are
-   already encrypted, safe to transfer as-is.
+   then copy the resulting `./data/browser_profiles/<provider>.tar.enc`
+   into the add-on's `/data/browser_profiles/` (Samba/File editor
+   add-on, or `scp` if SSH is enabled) - it's already encrypted, safe
+   to transfer as-is.
 3. Create API keys for whatever apps will call this, either from the
-   `/admin` dashboard (`http://homeassistant.local:8420/admin`, needs
-   `admin_password` set) or by execing into the add-on and running
+   `/admin` dashboard or by execing into the add-on and running
    `python scripts/manage_apikeys.py create --name my-app --models
    claude:opus --ips 192.168.1.0/24`. Each key is bound to specific
    `provider:model` refs and, optionally, an IP allowlist.
