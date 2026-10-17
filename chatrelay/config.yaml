@@ -1,5 +1,5 @@
 name: "ChatRelay"
-version: "0.11.2"
+version: "0.12.0"
 slug: "chatrelay"
 description: "Expose an OpenAI-compatible API backed by consumer AI chat subscriptions (private use)"
 url: "https://github.com/a4ng3i/ha-apps/tree/main/chatrelay"
@@ -16,7 +16,15 @@ arch:
 startup: application
 boot: auto
 init: false
-ingress: false
+# Open the web UI from Home Assistant itself (sidebar panel / "Open Web
+# UI"), proxied and authenticated by HA - see app/core/ingress.py.
+# panel_admin restricts the panel to HA administrators. Port 8420 stays
+# published for API clients on the LAN.
+ingress: true
+ingress_port: 8420
+panel_icon: "mdi:chat-processing"
+panel_title: "ChatRelay"
+panel_admin: true
 host_network: false
 # Lets the add-on call the Supervisor API to write a generated
 # master_key/admin_password into its own Configuration options and
