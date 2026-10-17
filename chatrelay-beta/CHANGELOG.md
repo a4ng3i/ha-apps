@@ -3,6 +3,21 @@
 Versioning: `x.y.z` - x = major, y = minor, z = bugfix.
 Bumping y resets z to 0. Bumping x resets y and z to 0.
 
+## [0.12.0] - 2026-10-17
+
+### Added
+- **Home Assistant Ingress.** The setup page and admin dashboard
+  (including the in-browser provider login screen) open from inside
+  HA: "Open Web UI" on the add-on page, or the ChatRelay sidebar panel
+  (HA admins only, `panel_admin: true`). Pages get the Ingress URL
+  prefix injected so their API, WebSocket and noVNC URLs resolve
+  under it (`app/core/ingress.py`). Requests arriving via Ingress
+  (from the Supervisor's fixed address 172.30.32.2, while running
+  under Supervisor) are already authenticated by HA, so `/admin` skips
+  its own Basic auth for them; direct access on port 8420 still
+  requires `admin_username`/`admin_password`. `/` now redirects to
+  the setup page until `master_key` is set, then to `/admin`.
+
 ## [0.11.2] - 2026-10-12
 
 ### Fixed

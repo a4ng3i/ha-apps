@@ -19,8 +19,14 @@ banned.
 
 ## Setup
 
-1. Start the add-on (it starts fine with no options set). Open
-   `http://homeassistant.local:8420/admin/setup` and click "Generate
+Everything below works from inside Home Assistant: click **Open Web
+UI** on the add-on page, or **ChatRelay** in the sidebar (HA admins
+only). HA handles the login there, so the dashboard opens without the
+separate admin password. Direct access on port 8420 also works and
+still requires `admin_username`/`admin_password`.
+
+1. Start the add-on (it starts fine with no options set). Open the
+   web UI (or `http://homeassistant.local:8420/admin/setup`) and click "Generate
    master key" - this encrypts everything the add-on stores, and is
    written straight into the add-on's Configuration options and
    restarted for you, no separate command, no other machine. Click
