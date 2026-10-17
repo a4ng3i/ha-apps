@@ -110,8 +110,11 @@ in this repo for the full rationale.
 secrets** (the default) syncs all of `/config` automatically; **Selective**
 syncs nothing unless you've explicitly included it. Either way, one rule
 never changes: files that can hold credentials or other secrets
-(`secrets.yaml`, `.storage/`, `*.db*` the recorder database, `.cloud/`,
-`.cache/`, `tts/`, log files, and a couple others) are **excluded by
+(`secrets.yaml`, `.storage/`, databases (`*.db*`, `*.sqlite*`), `.cloud/`,
+`.cache/`, `tts/`, log files, private keys and certificates (`*.pem`,
+`*.key`, `.ssh/`), integration token caches (`*.token`,
+`.spotify-token-cache`, `*.pickle`), personal data (`known_devices.yaml`,
+`ip_bans.yaml`), Zigbee2MQTT's network keys, and a couple others) are **excluded by
 default and never sync on their own**, even if a Selective-mode folder you
 included happens to contain one. There's no "sync all secrets" switch.
 Each category has to be individually selected in **Settings -> Secret
@@ -145,9 +148,17 @@ want tracked). It cannot be used to re-include a secret category -- that
 always has to go through the confirmation-phrase flow above, so there's
 exactly one path to opting a secret file into sync, not two.
 
-A secondary pattern/entropy-based scanner also blocks pushes containing
-what look like API keys or tokens in files that aren't already ignored, as
-a belt-and-suspenders check -- not a replacement for the ignore list. If
+A secondary scanner also blocks pushes containing what look like API keys
+or tokens in files that aren't already ignored, as a belt-and-suspenders
+check -- not a replacement for the ignore list. Besides known token
+formats and high-entropy quoted strings, it flags any YAML key whose name
+says it's a credential (`password`, `token`, `secret`, `api_key`, `psk`,
+`network_key`, `key`, ...) when it has a literal value, quoted or not. A
+value that points elsewhere (`!secret`, `!env_var`, `!include`, a file
+path, a template) is fine, which is why moving the value into
+`secrets.yaml` is the usual fix. Findings never show the value itself.
+Binary files (images, fonts, ...) can't be scanned, so they are held back
+the same way until you allow them. If
 it blocks something during a Push, you land on a confirmation page right
 away listing exactly which file(s) and why (e.g. an ESPHome device config
 with an embedded OTA password). If that's a false positive -- or you've
@@ -202,6 +213,20 @@ what actually prunes GitHub down to match the new, smaller scope; "GitHub
 wins" never deletes an excluded-category file from live `/config` just
 because GitHub doesn't have it -- GitHub was never supposed to have it in
 the first place.
+
+### Changing the repository
+
+**Settings -> Repository** changes the repo URL or branch. Before saving,
+it checks that this add-on's deploy key can read the new repository and
+that the branch exists; if not, nothing changes. After a change,
+automatic sync pauses and you're taken back to the initial-import step to
+review how `/config` and the new repository should be reconciled. Nothing
+is pushed or pulled until you confirm there. The onboarding screens
+themselves can't be re-submitted once setup is complete.
+
+The initial import itself is protected like a normal pull: files taken
+from GitHub are backed up first, validated with Home Assistant's config
+check, and rolled back if the check fails.
 
 ## Pull
 
@@ -439,6 +464,13 @@ exception is a short bootstrap window before you've completed onboarding
 step 2 (pasting the token) -- there's genuinely no way to ask Core who's
 an admin before that point, so requests are allowed through with a
 logged warning until a token is configured.
+
+Before any of that, every request must come from the Supervisor itself
+(the address the `supervisor` hostname resolves to, normally
+`172.30.32.2`). The admin check relies on a user-ID header that only the
+Supervisor's ingress proxy can be trusted to set; without the address
+check, another add-on on Home Assistant's internal network could connect
+to this add-on directly and claim to be an admin.
 
 ## Possible future work
 
