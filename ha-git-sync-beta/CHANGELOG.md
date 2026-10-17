@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.19.0 (2026-10-08)
+## 1.20.0 (2026-10-17)
 
 **Wired up the previously-inert `auto_restart_quiet_hours` option, and
 added a "Restart needed" banner.**
@@ -27,6 +27,51 @@ added a "Restart needed" banner.**
 24 new tests (pending-restart persistence, the background restart
 sweep's every no-op/success/failure path, the new banner and dismiss
 route, and the new status entity). Full suite (349 tests) passes.
+
+## 1.19.0 (2026-10-17)
+
+**Security and data-safety release.** Recommended for everyone.
+
+- **Only the Home Assistant Supervisor can reach the add-on.** Previously
+  any other add-on or container on Home Assistant's internal network could
+  connect directly, claim to be an administrator, and use every function
+  here, including changing the repository and pushing or pulling
+  `/config`. Requests (other than the `/healthz` watchdog check) must now
+  come from the Supervisor's own address. Normal use from the sidebar is
+  unaffected.
+- **Fixed: a push could silently undo changes made on GitHub.** If GitHub
+  had commits you hadn't pulled yet, the next push after that could write
+  your older local copies back over them without any conflict warning.
+  Pushing now only records what it actually pushed, so GitHub's changes
+  still arrive on your next pull.
+- **Fixed: Full Sync "HA wins" failed** with a push error whenever GitHub
+  had commits since your last sync.
+- **The onboarding screens can no longer be re-submitted after setup.**
+  They used to stay active, so the repository could be switched without
+  any check, and the initial import could overwrite `/config` with no
+  backup. Use the new **Settings -> Repository** instead: it verifies the
+  deploy key can read the new repository and branch, then pauses
+  automatic sync until you review the import for the new repository.
+- **Initial import is now as safe as a pull:** GitHub's versions are
+  backed up first, checked with Home Assistant's config check, and rolled
+  back if the check fails. It also works when your branch isn't the
+  repository's default branch (it used to fail with an error).
+- **More files are excluded as secrets by default:** private keys and
+  certificates (`*.pem`, `*.key`, `.ssh/`), token caches (`*.token`,
+  `.spotify-token-cache`, `*.pickle`), `*.sqlite` databases,
+  `known_devices.yaml`, `ip_bans.yaml`, and Zigbee2MQTT's network keys.
+  Each can still be opted in under **Settings -> Secret files**. If any
+  of these were already pushed to your repository, they stay in its git
+  history; consider rotating those credentials.
+- **The secret scanner now catches unquoted and short secrets**, such as
+  `password: hunter2` or an ESPHome/Zigbee key, by looking at the key
+  name. Values using `!secret` are not flagged. Binary files (images,
+  fonts) are now held back until you allow them, since they can't be
+  scanned. **After updating, some pushes may be held back:** review them
+  under **Settings -> Files flagged by the secret scanner**, and either
+  move the value into `secrets.yaml` or allow the file.
+
+54 new tests. Full suite (379 tests) passes.
 
 ## 1.18.0 (2026-10-08)
 
