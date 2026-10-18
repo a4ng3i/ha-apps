@@ -1,0 +1,54 @@
+configuration:
+  ai_provider:
+    name: AI provider
+    description: >-
+      anthropic (Claude), openai_compatible (any OpenAI-style endpoint,
+      e.g. a local model), or none (local checks only).
+  anthropic_api_key:
+    name: Anthropic API key
+    description: From console.anthropic.com. Stored by the Supervisor, never logged.
+  anthropic_model:
+    name: Claude model
+    description: >-
+      Sonnet 5.5 is the economical default. Opus 5.5 analyzes deeper,
+      Haiku 5.5 is cheapest. You can also pick a model per run in the panel.
+  ai_effort:
+    name: AI effort
+    description: How hard the model thinks. Lower is cheaper and faster.
+  openai_base_url:
+    name: OpenAI-compatible base URL
+    description: For openai_compatible, e.g. http://192.168.1.10:11434/v1 for Ollama.
+  openai_api_key:
+    name: OpenAI-compatible API key
+    description: Optional, if your endpoint needs one.
+  openai_model:
+    name: OpenAI-compatible model
+    description: Model name your endpoint expects.
+  privacy_level:
+    name: Privacy level
+    description: >-
+      What gets redacted before anything is sent to the AI. strict also
+      pseudonymizes people's names and hides private IPs.
+  schedule:
+    name: Schedule
+    description: Run automatically daily or weekly (Sunday), or off.
+  schedule_time:
+    name: Schedule time
+    description: Local time for scheduled runs, HH:MM.
+  history_hours:
+    name: History window (hours)
+    description: How far back history and insights look.
+  read_recorder_db:
+    name: Read recorder database
+    description: Read statistics directly from the recorder database (read-only).
+  recorder_db_url:
+    name: Read-only recorder DB URL
+    description: >-
+      Only for MariaDB/MySQL/PostgreSQL recorders. Use a read-only user,
+      e.g. mysql://ha_ai_ro:password@core-mariadb/homeassistant. See Documentation.
+  notify:
+    name: Notify on serious findings
+    description: Persistent notification when a run finds critical or high severity issues.
+  log_level:
+    name: Log level
+    description: Verbosity of the add-on's own log.
