@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.20.0 (2026-10-18)
+
+**Second security and data-safety release.** Recommended for everyone.
+
+- **Full Sync "HA wins" no longer deletes files outside your sync scope.**
+  It used to remove everything on GitHub that wasn't in `/config`,
+  including your repository's `README.md`, `LICENSE`, `.gitignore` and
+  `.github/` workflows. These, and files outside your selective scope or
+  excluded in Settings, are now kept. The confirmation page lists them,
+  with an unticked box to delete them if you really want that.
+- **Code from GitHub is never applied automatically.** Files under
+  `custom_components/` or `python_scripts/`, YAML containing
+  `shell_command` or `command_line`, and files those keys `!include`, now
+  wait for you: scheduled "apply" checks send them to Conflicts, and the
+  Pull page shows them unticked with a "code" label. Before, anyone with
+  write access to your repository could run code in Home Assistant
+  without a click from you.
+- **Fixed: "Keep HA version" never reached GitHub.** After resolving a
+  conflict by keeping Home Assistant's version (or by merging by hand),
+  the next push didn't send it, so GitHub kept its version forever. It
+  is now pushed like any other local change.
+- **Only an administrator can finish setup step 2.** The token step now
+  checks that the token belongs to an administrator (a non-admin token
+  used to be accepted and then lock everyone out) and that the person
+  submitting it is an administrator.
+- **A symlink pointing outside `/config` no longer breaks push, Compare or
+  Full Sync.** Such links are skipped and logged instead of aborting the
+  whole operation.
+- **GitHub's SSH host keys are built in**, so the very first connection
+  can't be intercepted. Non-GitHub SSH hosts now work too (their key is
+  trusted on first connection).
+- **Backups are private.** Archives are created with mode 0600 in a 0700
+  folder, and **Settings -> Backups** has a new option to keep them in
+  this add-on's private storage instead of the shared Backups folder
+  (the default stays `/backup/ha-git-sync`).
+- **Pulled files keep their permissions** (a 0600 file used to become
+  world-readable after a pull).
+- **Notify services get a minimal message by default:** just "HA Git Sync
+  needs your attention", since these usually pass through third-party
+  push, SMS or email providers. The details stay on the Notifications
+  page; tick **Include details** in Settings to send them.
+- Smaller fixes: backups and rollbacks made in the same second no longer
+  overwrite each other; a demoted admin loses access within 30 seconds
+  and immediately for any change; the watchdog exemption now matches
+  `/healthz` exactly.
+- The add-on's tests now run automatically before every published build.
+
 ## 1.19.0 (2026-10-17)
 
 **Security and data-safety release.** Recommended for everyone.
