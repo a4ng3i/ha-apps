@@ -97,6 +97,7 @@ stored session and log one out, browse the model registry.
 | `headless` | Leave `true`. `false` is only for debugging a broken provider selector with a real display attached. |
 | `global_ip_allowlist` | Comma-separated IPs/CIDRs allowed at all, before per-key checks. Empty = no extra restriction. |
 | `admin_username` / `admin_password` | `/admin` dashboard login. Empty password = dashboard disabled. |
+| `user_agent` | User-Agent the provider browser sends, e.g. to match a firewall/proxy rule. Empty = Chromium's default. Restart the add-on after changing it. |
 
 ## When a provider breaks
 

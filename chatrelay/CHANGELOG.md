@@ -3,6 +3,13 @@
 Versioning: `x.y.z` - x = major, y = minor, z = bugfix.
 Bumping y resets z to 0. Bumping x resets y and z to 0.
 
+## [0.12.1] - 2026-10-18
+
+### Added
+- `user_agent` option (`MIDDLEWARE_USER_AGENT` in Docker): sets the
+  User-Agent header the provider browser sends, for egress filtering
+  by User-Agent. Empty keeps Chromium's default.
+
 ## [0.12.0] - 2026-10-17
 
 ### Added
