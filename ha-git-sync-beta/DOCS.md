@@ -69,14 +69,24 @@ in this repo for the full rationale.
    first start. Copy the public key shown into your GitHub repo's
    **Settings -> Deploy keys -> Add deploy key**, with **Allow write
    access** checked (needed for push). Then paste your repo's SSH URL
-   (`git@github.com:owner/repo.git`) and target branch.
+   (`git@github.com:owner/repo.git`) and target branch. GitHub's SSH host
+   keys are built into the add-on, so the first connection can't be
+   intercepted. For another SSH host (e.g. a self-hosted Gitea), the host's
+   key is fetched and trusted on first connection; to pin it yourself,
+   put it in `/data/ssh/known_hosts` before the first sync.
 3. **Step 2 - Home Assistant token.** Create a long-lived access token from
    your HA user profile page and paste it in. This is the only credential
    that can reach Core's `/api/config/core/check_config` endpoint, which is
    why the add-on needs it (the Supervisor's own token can't call it).
    It's encrypted at rest using a key generated locally and stored in this
    add-on's persistent storage -- the same trust boundary as the SSH deploy
-   key.
+   key, so treat anyone who can read the add-on's `/data` as holding this
+   token. The token must belong to an **administrator** (the add-on needs
+   it to read Home Assistant's admin list), and only an administrator can
+   complete this step. **Recommended:** create a dedicated admin user just
+   for this add-on (e.g. "HA Git Sync", local login only) and make the token
+   from that user's profile, so it can be revoked on its own without
+   touching your personal account, and its use is easy to spot in logs.
 4. **Step 3 - Sync mode.** This only controls the GitHub &rarr; here
    direction; the opposite direction is governed per-file by **Settings ->
    Sync policy** instead (see below). Full Sync is always separate and
@@ -249,6 +259,25 @@ back and shows up in **Conflicts** with the same diff, where you can keep
 your version, take GitHub's after all, or hand-edit a merge -- exactly
 the same options as a genuine both-sides-changed conflict.
 
+### Code is always held for review
+
+Anyone who can write to your repository could otherwise run code inside
+Home Assistant through a pull. So these are **never applied automatically**,
+whatever their sync policy says, and start **unticked** on the Pull page
+with a "code" label:
+
+- anything under `custom_components/` or `python_scripts/`
+- any YAML file that contains `shell_command` or `command_line` (before or
+  after the change), and any file those keys pull in with `!include`
+
+A scheduled "apply" check sends them to **Conflicts** instead, where you
+review the diff and take GitHub's version only if you trust it. Full Sync
+"GitHub wins" applies them as they are, so its confirmation page lists
+them first. Home Assistant's config check only checks syntax, so it can't
+catch harmful code. For stronger protection, turn on branch protection on
+GitHub (require pull requests and reviews for the branch this add-on
+syncs) and use a deploy key only for this add-on.
+
 Whether a local change here pushes to GitHub on its own, and whether a
 scheduled check auto-applies what it finds, is now controlled per-file by
 **Settings -> Sync policy** (see below) rather than always happening
@@ -312,7 +341,12 @@ neither can clean up drift that falls outside that delta (e.g. a secret
 category or scope you just excluded, whose files are still sitting in the
 GitHub repo from before). Full Sync instead makes one side match the other
 *exactly*, right now -- including **deleting** files the losing side
-doesn't have. It's gated behind a confirmation page showing the precise
+doesn't have. In the **HA wins** direction, files on GitHub that are
+outside your sync scope or excluded in Settings, plus repository files
+like `README.md`, `LICENSE`, `.gitignore` and `.github/`, are **kept** by
+default; the confirmation page lists them with an unticked "Also delete
+these files from GitHub" box if you do want them cleaned up. It's gated
+behind a confirmation page showing the precise
 file list (what gets written vs. deleted) with a Yes/No confirmation
 before anything happens. Both directions still go through the same secret
 scanner (push side) and backup + `check_config` + automatic rollback
@@ -394,7 +428,11 @@ places, chosen in **Settings -> Notifications**:
   have set up in Home Assistant). The dropdown is populated from your
   actual HA configuration; if it can't be loaded (e.g. no token from
   onboarding yet), type the service name manually instead (the part
-  after `notify.`, e.g. `mobile_app_phone`).
+  after `notify.`, e.g. `mobile_app_phone`). By default only "HA Git Sync
+  needs your attention" is sent, because notify services usually go
+  through third-party push, SMS or email providers; the full notice (file
+  names, config check output) stays on the Notifications page. Tick
+  **Include details** to send the full text instead.
 
 In the default mode, the "conflicts need resolution" notice clears itself
 automatically once every conflict it could refer to is resolved -- no
@@ -415,11 +453,17 @@ healthy, and a failure there -- an overloaded Supervisor, low disk
 space -- aborted the pull for a safety net nothing in the app ever
 actually restored from programmatically anyway).
 
-These live under `/backup/ha-git-sync/`, the same shared **Backups**
-storage location Home Assistant itself uses (so they're reachable outside
-the add-on too, e.g. from a Samba or File editor add-on if you have one).
+By default these live under `/backup/ha-git-sync/`, the same shared
+**Backups** storage location Home Assistant itself uses (so they're
+reachable outside the add-on too, e.g. from a Samba or File editor add-on
+if you have one). Other add-ons that map the Backups folder can see that
+folder, so archives are created readable only by this add-on's user
+(mode 0600). If you'd rather keep them fully private, choose **Private to
+this add-on** in **Settings -> Backups**: new archives then go to
+`/data/backups/`, which no other add-on can read, but which is deleted if
+you uninstall this add-on. Existing archives are not moved.
 Each archive is named after what triggered it and when -- e.g.
-`/backup/ha-git-sync/pull-20260101T120000Z.tar.gz` -- and preserves
+`pull-20260101T120000.123Z.tar.gz` -- and preserves
 `/config`'s relative paths inside it, so extracting it (or opening it in
 any archive tool) reproduces exactly the files that were about to change,
 as they stood right before the change. A file that didn't exist yet
@@ -476,11 +520,15 @@ Supervisor source). Because of that, this add-on checks for itself: every
 request is verified against Core's real admin user list, resolved over
 Core's WebSocket API using the long-lived token you provide during
 onboarding, and a request from anyone who isn't confirmed as an admin (or
-whose admin status can't be verified at all) is rejected. The one
+whose admin status can't be verified at all) is rejected. The admin list
+is cached for 30 seconds, and refreshed before every action that changes
+something, so a demoted admin loses access straight away. The one
 exception is a short bootstrap window before you've completed onboarding
 step 2 (pasting the token) -- there's genuinely no way to ask Core who's
-an admin before that point, so requests are allowed through with a
-logged warning until a token is configured.
+an admin before that point, so pages load with a logged warning until a
+token is configured. Step 2 itself closes that window: the token is only
+accepted if it can read Core's user list, and only if the person
+submitting it is on that list as an administrator.
 
 Before any of that, every request must come from the Supervisor itself
 (the address the `supervisor` hostname resolves to, normally
