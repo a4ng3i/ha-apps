@@ -55,6 +55,21 @@ Same add-on, built from the source repo's `uat` branch. Independent
 install from production: its own slug, its own `/data`. Treat it as a
 preview, not something to depend on.
 
+### HA AI Assistant
+
+Read-only health, security and insights analysis for Home Assistant:
+reads logs, configuration, events and the recorder database, finds
+bugs, misconfigurations and security gaps, and uses AI (Claude, or a
+local OpenAI-compatible model) to explain fixes and what happens in your
+house. Everything sent to the AI is redacted first and logged. See
+[`ha-ai-assistant-beta/DOCS.md`](ha-ai-assistant-beta/DOCS.md).
+
+### HA AI Assistant (Beta)
+
+Same add-on, built from the source repo's `uat` branch. Independent
+install from production: its own slug, its own `/data`. Treat it as a
+preview, not something to depend on.
+
 ## Updates
 
 Each add-on's `config.yaml` here points at a pre-built image in GHCR
