@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.20.1 (2026-10-18)
+
+**Fix: the Sync scope picker now shows what really syncs.**
+
+- **Folders that sync without looking ticked are now marked.** In
+  Selective mode, a folder pulled in by a pattern the tree can't draw as
+  a tick (for example `zigbee2mqtt` typed without the trailing `/`, or a
+  wildcard like `*.yaml`) looked unselected but still synced, and still
+  appeared under Sync policy. Such rows now say
+  "syncs now: matched by pattern ...".
+- **A warning when the ticks aren't in effect.** If the saved scope is
+  "Sync everything except secrets", the tree is not used at all: every
+  folder syncs except the secret categories, and `.storage/` syncs too if
+  you turned it on under Secret files. The picker now says so instead of
+  showing unticked folders as if they were excluded.
+- The Sync policy card names the saved scope it is listing files for.
+
+Nothing is deleted from GitHub by this update. If files you don't want
+are already there, narrow the scope, then run Full Sync "HA wins" and
+tick the option to remove files outside your scope.
+
 ## 1.20.0 (2026-10-18)
 
 **Second security and data-safety release.** Recommended for everyone.
