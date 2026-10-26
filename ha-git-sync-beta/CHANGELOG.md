@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.22.0 (2026-10-26)
+
+**One release for both channels.** Production and Beta now run the same
+code again. This version brings together everything that was only on
+one side:
+
+- From Beta (1.21.0): the `auto_restart_quiet_hours` option now works,
+  the Status page has a dismissible "Restart needed" banner, and there
+  is a new `binary_sensor.ha_git_sync_restart_needed` status entity.
+- From Production (1.20.1): the Sync scope picker shows what really
+  syncs, including rows matched by a pattern.
+- New fix (1.20.2): a completed Full Sync marks open conflicts resolved
+  and clears stale notices. "Clear notices" is now at the top of the
+  Notifications page.
+
+The entries for those versions below describe each change in detail.
+
+## 1.20.2 (2026-10-24)
+
+**Fix: a completed Full Sync now cleans up after itself.**
+
+- **Open conflicts are marked resolved.** After a Full Sync ("HA wins"
+  or "GitHub wins") finishes, /config and GitHub match, so any open
+  conflict has nothing left to decide. These are now marked resolved
+  automatically instead of staying on the Conflicts page. This writes
+  nothing to /config or GitHub. A conflict on a file the secret scanner
+  held back stays open, because that file still differs.
+- **Stale notices are cleared.** "Conflicts need resolution", "changes on
+  GitHub", "diverged history" and earlier failed sync notices are removed
+  from the Notifications page. Reload and restart notices are kept, since
+  they still need doing.
+- **"Clear notices" is now at the top** of the Notifications page, so you
+  don't have to scroll past every notice to reach it.
+
+## 1.20.1 (2026-10-18)
+
+**Fix: the Sync scope picker now shows what really syncs.**
+
+- **Folders that sync without looking ticked are now marked.** In
+  Selective mode, a folder pulled in by a pattern the tree can't draw as
+  a tick (for example `zigbee2mqtt` typed without the trailing `/`, or a
+  wildcard like `*.yaml`) looked unselected but still synced, and still
+  appeared under Sync policy. Such rows now say
+  "syncs now: matched by pattern ...".
+- **A warning when the ticks aren't in effect.** If the saved scope is
+  "Sync everything except secrets", the tree is not used at all: every
+  folder syncs except the secret categories, and `.storage/` syncs too if
+  you turned it on under Secret files. The picker now says so instead of
+  showing unticked folders as if they were excluded.
+- The Sync policy card names the saved scope it is listing files for.
+
+Nothing is deleted from GitHub by this update. If files you don't want
+are already there, narrow the scope, then run Full Sync "HA wins" and
+tick the option to remove files outside your scope.
+
 ## 1.21.0 (2026-10-18)
 
 Beta channel: includes everything in 1.20.0 below, plus:
