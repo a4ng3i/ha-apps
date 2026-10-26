@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.22.0 (2026-10-26)
+
+**One release for both channels.** Production and Beta now run the same
+code again. This version brings together everything that was only on
+one side:
+
+- From Beta (1.21.0): the `auto_restart_quiet_hours` option now works,
+  the Status page has a dismissible "Restart needed" banner, and there
+  is a new `binary_sensor.ha_git_sync_restart_needed` status entity.
+- From Production (1.20.1): the Sync scope picker shows what really
+  syncs, including rows matched by a pattern.
+- New fix (1.20.2): a completed Full Sync marks open conflicts resolved
+  and clears stale notices. "Clear notices" is now at the top of the
+  Notifications page.
+
+The entries for those versions below describe each change in detail.
+
+## 1.20.2 (2026-10-24)
+
+**Fix: a completed Full Sync now cleans up after itself.**
+
+- **Open conflicts are marked resolved.** After a Full Sync ("HA wins"
+  or "GitHub wins") finishes, /config and GitHub match, so any open
+  conflict has nothing left to decide. These are now marked resolved
+  automatically instead of staying on the Conflicts page. This writes
+  nothing to /config or GitHub. A conflict on a file the secret scanner
+  held back stays open, because that file still differs.
+- **Stale notices are cleared.** "Conflicts need resolution", "changes on
+  GitHub", "diverged history" and earlier failed sync notices are removed
+  from the Notifications page. Reload and restart notices are kept, since
+  they still need doing.
+- **"Clear notices" is now at the top** of the Notifications page, so you
+  don't have to scroll past every notice to reach it.
+
 ## 1.20.1 (2026-10-18)
 
 **Fix: the Sync scope picker now shows what really syncs.**
@@ -20,6 +54,36 @@
 Nothing is deleted from GitHub by this update. If files you don't want
 are already there, narrow the scope, then run Full Sync "HA wins" and
 tick the option to remove files outside your scope.
+
+## 1.21.0 (2026-10-18)
+
+Beta channel: includes everything in 1.20.0 below, plus:
+
+**Wired up the previously-inert `auto_restart_quiet_hours` option, and
+added a "Restart needed" banner.**
+
+- The add-on's Configuration tab has had an `auto_restart_quiet_hours`
+  option since early on, described as auto-applying a pending restart
+  during quiet hours -- but it was never actually read anywhere, so
+  turning it on silently did nothing. It's now wired up for real: when
+  on (still off by default), a background job restarts Home Assistant
+  automatically once it's both pending and inside the quiet-hours
+  window already configured in **Settings -> Reload policy** (the same
+  window "Scheduled" reload mode uses -- no second window to configure).
+- Whether or not that option is on, the Status page now shows a
+  **"Restart needed"** banner (previously just a one-time notification,
+  easy to miss and impossible to dismiss) naming why, with an **"I've
+  already restarted Home Assistant"** button to clear it -- the only
+  way to clear it when the automatic option is off, since this app has
+  no way to detect a restart performed from Core's own UI on its own.
+- Added the `binary_sensor.ha_git_sync_restart_needed` status entity
+  (Settings -> Status entities), completing the set from last release --
+  it was deliberately left out then because nothing persisted whether a
+  restart was pending; it does now.
+
+24 new tests (pending-restart persistence, the background restart
+sweep's every no-op/success/failure path, the new banner and dismiss
+route, and the new status entity). Full suite (349 tests) passes.
 
 ## 1.20.0 (2026-10-18)
 
