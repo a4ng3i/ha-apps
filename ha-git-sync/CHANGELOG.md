@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.22.3 (2026-10-31)
+
+**Fix: "Push checked files anyway" no longer loops.**
+
+A file can be held back for two reasons at once: it looks like it holds
+a secret, and it was also changed on GitHub (or has an open conflict).
+The "Push held back" page showed only one reason at a time. Ticking it
+brought up the other reason and forgot the first tick, so the page kept
+bouncing between the two.
+
+Both reasons are now listed together on one page, and ticks you already
+gave carry over to the next page.
+
 ## 1.22.2 (2026-10-31)
 
 **Fix: no more false conflicts on files Home Assistant rewrites itself.**
