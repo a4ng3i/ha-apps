@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.22.2 (2026-10-31)
+
+**Fix: no more false conflicts on files Home Assistant rewrites itself.**
+
+After ha-git-sync pushed a file, the next pull counted that push as a
+change made on GitHub. If Home Assistant had changed the file again in
+the meantime, it showed up as a conflict even though nobody touched
+GitHub, and a "changes on GitHub" notice was sent. This hit files Home
+Assistant rewrites on its own all the time, such as
+`.storage/core.restore_state` and `.storage/core.entity_registry`.
+
+A pull now ignores a file when GitHub holds exactly what was last synced.
+Real edits on GitHub are still detected as before.
+
+Conflicts that already exist from this are not cleared automatically.
+GitHub only has Home Assistant's own older copy, so pick "Keep HA
+version" on each.
+
 ## 1.22.1 (2026-10-26)
 
 **Fix: Push no longer overrides an open conflict, and pushing one anyway clears it.**
