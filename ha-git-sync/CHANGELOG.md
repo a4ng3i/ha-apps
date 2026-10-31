@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.22.1 (2026-10-26)
+
+**Fix: Push no longer overrides an open conflict, and pushing one anyway clears it.**
+
+- **Push holds back conflicted files.** When a pull finds a file changed
+  both in Home Assistant and on GitHub, it keeps it as an open conflict.
+  A plain Push used to send Home Assistant's copy to GitHub anyway,
+  overwriting the GitHub edit without asking, and the conflict stayed
+  open on the Conflicts page. Push now holds such a file back and lists
+  it with a diff, like any other file also changed on GitHub.
+- **"Push anyway" settles the conflict.** Ticking the file and pushing
+  anyway is the same choice as "Keep HA": the conflict is marked
+  resolved and the "conflicts need resolution" notice clears once none
+  are left.
+- **Auto-push skips conflicted files quietly.** The Conflicts page
+  already reports them, so the file watcher no longer pushes them and
+  sends no extra "push blocked" notice.
+- **Clearer file count on Status.** The number of files not synced was
+  labelled "excluded as potential secrets". It also counts files outside
+  your sync scope, which is most of them in Selective mode. The label
+  now says so.
+
 ## 1.22.0 (2026-10-26)
 
 **One release for both channels.** Production and Beta now run the same
